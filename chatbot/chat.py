@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from langchain_chat_msg_history import chat_history_response
 from langchain_retrieval_chain import get_answer
@@ -9,7 +10,8 @@ CHAT_ROUTER = APIRouter(tags=['chatbot'])
 
 @CHAT_ROUTER.get("/chat")
 def get_chat():
-    return "welcome to chat"
+    LOGGER.info("responding to client request...")
+    return JSONResponse({"msg": "success"})
 
 
 @CHAT_ROUTER.post("/chat")
