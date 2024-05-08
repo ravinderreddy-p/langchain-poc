@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
@@ -11,12 +11,13 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+from pydantic import BaseModel
 
 def parse_retriever_input(params: Dict):
     return params["messages"][-1].content
 
 
-loader = WebBaseLoader("https://docs.smith.langchain.com/overview")
+loader = WebBaseLoader(["https://docs.smith.langchain.com/overview", "https://weather.com/en-IN/weather/today"])
 data = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
 all_splits = text_splitter.split_documents(data)
@@ -37,18 +38,19 @@ question_answering_prompt = ChatPromptTemplate.from_messages(
         
     ]
 )
-output_parser = StrOutputParser()
 
-document_chain = create_stuff_documents_chain(llm, question_answering_prompt, output_parser=output_parser)
+document_chain = create_stuff_documents_chain(llm, question_answering_prompt)
 
 demo_chat_history = ChatMessageHistory()
 
 # Creating Retrieval Chain
 retrieval_chain = RunnablePassthrough.assign(
-    context=parse_retriever_input | retriever,
+    context=parse_retriever_input | retriever
 ).assign(
     answer = document_chain
 )
+                      
+
 
 def chat_history_response(question):
     demo_chat_history.add_user_message(question)
@@ -58,5 +60,4 @@ def chat_history_response(question):
     }
     )
     demo_chat_history.add_ai_message(resp["answer"])
-    print(resp)
     return resp["answer"]
